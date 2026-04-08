@@ -1,3 +1,5 @@
+ let userCoords = null;
+
  // Initialize on load and set default date/persistence
   window.addEventListener('DOMContentLoaded', () => {
     loadFromStorage();
@@ -11,6 +13,10 @@
     }
 
     document.querySelector('.form-grid').addEventListener('input', saveToStorage);
+
+    dateInput.addEventListener('input', updateTamilDateFields);
+    updateTamilDateFields();
+    initLocation();
   });
 
   function setupAutoSuggest() {
@@ -73,6 +79,102 @@
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
     return `${d}/${m}/${y}`;
+  }
+
+  async function initLocation() {
+    if (!navigator.geolocation) return;
+    
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      
+      // Auto-detect city name once if field is empty
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${userCoords.lat}&lon=${userCoords.lng}`);
+        const data = await res.json();
+        const city = data.address.city || data.address.town || data.address.village || data.address.suburb || "";
+        if (city && !document.getElementById('f_place').value) {
+          document.getElementById('f_place').value = city;
+          saveToStorage();
+        }
+      } catch (err) {
+        console.warn("Reverse geocoding failed", err);
+      }
+
+      fetchSunData();
+    }, (err) => {
+      console.warn("Geolocation denied or failed", err);
+    });
+  }
+
+  async function fetchSunData() {
+    if (!userCoords) return;
+    const dateVal = document.getElementById('f_date').value;
+    try {
+      const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${userCoords.lat}&lng=${userCoords.lng}&date=${dateVal}&formatted=0`);
+      const data = await res.json();
+      if (data.status === "OK") {
+        const fmt = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        document.getElementById('f_sunrise').value = fmt(data.results.sunrise);
+        document.getElementById('f_sunset').value = fmt(data.results.sunset);
+        saveToStorage();
+      }
+    } catch (err) {
+      console.warn("Sun data fetch failed", err);
+    }
+  }
+
+  function updateTamilDateFields() {
+    const dateVal = document.getElementById('f_date').value;
+    if (!dateVal) return;
+
+    const gDate = new Date(dateVal);
+    if (isNaN(gDate.getTime())) return;
+
+    // 1. Day of the week
+    const dayIdx = gDate.getDay();
+    if (typeof tamilVasara !== 'undefined' && tamilVasara[dayIdx]) {
+      document.getElementById('f_day').value = tamilVasara[dayIdx] + " கிழமை";
+    }
+    autoFillKalaams(dayIdx);
+
+    // 2. Tamil Month and Date Number (Approximate)
+    const info = getTamilMonthInfo(gDate);
+    if (info) {
+      document.getElementById('f_month').value = info.month;
+      document.getElementById('f_maasam').value = info.month + " மாஸே";
+      document.getElementById('f_thithi_no').value = info.dayNum;
+    }
+    saveToStorage();
+    fetchSunData();
+  }
+
+  function getTamilMonthInfo(gDate) {
+    const year = gDate.getFullYear();
+    const chronoBoundaries = [
+      { m: 1, d: 14, idx: 9 }, { m: 2, d: 13, idx: 10 }, { m: 3, d: 14, idx: 11 },
+      { m: 4, d: 14, idx: 0 }, { m: 5, d: 15, idx: 1 }, { m: 6, d: 15, idx: 2 },
+      { m: 7, d: 16, idx: 3 }, { m: 8, d: 17, idx: 4 }, { m: 9, d: 17, idx: 5 },
+      { m: 10, d: 17, idx: 6 }, { m: 11, d: 16, idx: 7 }, { m: 12, d: 16, idx: 8 }
+    ];
+
+    let monthIdx = -1, startDate = null;
+    for (let i = chronoBoundaries.length - 1; i >= 0; i--) {
+      const b = chronoBoundaries[i];
+      const bDate = new Date(year, b.m - 1, b.d);
+      if (gDate >= bDate) {
+        monthIdx = b.idx;
+        startDate = bDate;
+        break;
+      }
+    }
+    if (monthIdx === -1) {
+      monthIdx = 8; // Margazhi (starts previous Gregorian year)
+      startDate = new Date(year - 1, 11, 16);
+    }
+    return {
+      month: (typeof tamilMonths !== 'undefined') ? tamilMonths[monthIdx] : '',
+      dayNum: Math.floor((gDate - startDate) / (1000 * 60 * 60 * 24)) + 1
+    };
   }
 
   function generateCard() {
@@ -213,4 +315,40 @@
 
     document.getElementById('pcard-output').innerHTML = html;
     showTab('preview');
+  }
+
+  function autoFillKalaams(weekday) {
+    const rahu = {
+      0: "04:30 To 06:00 PM",
+      1: "07:30 To 09:00 AM",
+      2: "03:00 To 04:30 PM",
+      3: "12:00 To 01:30 PM",
+      4: "01:30 To 03:00 PM",
+      5: "10:30 To 12:00 Noon",
+      6: "09:00 To 10:30 AM"
+    };
+
+    const yama = {
+      0: "12:00 To 01:30 PM",
+      1: "10:30 To 12:00 Noon",
+      2: "09:00 To 10:30 AM",
+      3: "07:30 To 09:00 AM",
+      4: "06:00 To 07:30 AM",
+      5: "03:00 To 04:30 PM",
+      6: "01:30 To 03:00 PM"
+    };
+
+    const kuligai = {
+      0: "03:00 To 04:30 PM",
+      1: "01:30 To 03:00 PM",
+      2: "12:00 To 01:30 PM",
+      3: "10:30 To 12:00 Noon",
+      4: "09:00 To 10:30 AM",
+      5: "07:30 To 09:00 AM",
+      6: "06:00 To 07:30 AM"
+    };
+
+    document.getElementById('f_rahu').value = rahu[weekday] || '';
+    document.getElementById('f_yama').value = yama[weekday] || '';
+    document.getElementById('f_kuligai').value = kuligai[weekday] || '';
   }
