@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panchangam Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=Lohit+Tamil&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #cc0000;
+      --blue: #0000cc;
+      --green: #007700;
+      --orange: #cc6600;
+      --black: #000000;
+      --gold: #8B6914;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans Tamil', 'Lohit Tamil', Arial, sans-serif;
+      background: #e8e0d0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      max-width: 860px;
+      margin: 0 auto 0;
+      display: flex;
+      gap: 4px;
+    }
+    .tab-btn {
+      padding: 10px 28px;
+      border: 2px solid #999;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: #d0c8b8;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      color: #444;
+      transition: background .2s;
+    }
+    .tab-btn.active { background: #fff; color: #000; border-color: #666; }
+
+    /* ── PANELS ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── FORM PANEL ── */
+    .form-wrapper {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px solid #666;
+      border-radius: 0 8px 8px 8px;
+      padding: 24px;
+    }
+    .form-wrapper h2 {
+      text-align: center;
+      color: var(--red);
+      font-size: 20px;
+      margin-bottom: 18px;
+      border-bottom: 2px double var(--red);
+      padding-bottom: 8px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 20px;
+    }
+    .full { grid-column: span 2; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .field textarea { height: 60px; resize: vertical; }
+    .section-title {
+      grid-column: span 2;
+      font-weight: bold;
+      font-size: 13px;
+      color: #fff;
+      background: var(--red);
+      padding: 4px 10px;
+      border-radius: 3px;
+      margin-top: 6px;
+    }
+    .generate-btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px;
+      background: linear-gradient(135deg, #cc0000, #880000);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: opacity .2s;
+    }
+    .generate-btn:hover { opacity: .88; }
+
+    /* ── PANCHANGAM CARD ── */
+    .card-wrapper {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px solid #888;
+      border-radius: 0 8px 8px 8px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .pcard {
+      padding: 18px 28px 22px;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* Header deity icons placeholder */
+    .deity-row {
+      text-align: center;
+      font-size: 26px;
+      letter-spacing: 6px;
+      margin-bottom: 6px;
+      color: var(--red);
+    }
+
+    /* Shloka block */
+    .shloka {
+      text-align: center;
+      font-size: 14.5px;
+      line-height: 1.9;
+      color: var(--black);
+      margin-bottom: 10px;
+    }
+    .shloka .sri { font-size: 16px; font-weight: bold; }
+
+    /* Vathyar info */
+    .vathyar-box {
+      text-align: center;
+      margin: 8px 0 12px;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+      padding: 6px 0;
+    }
+    .vathyar-name {
+      color: var(--blue);
+      font-size: 15px;
+      font-weight: bold;
+    }
+    .vathyar-phone {
+      color: var(--red);
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    /* Date row */
+    .date-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 14px 0 12px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .date-row span { color: var(--green); text-decoration: underline; }
+
+    /* Main pancha body */
+    .pancha-body {
+      font-size: 15px;
+      line-height: 1.85;
+      margin-bottom: 14px;
+    }
+    .pancha-body .hl-orange { color: var(--orange); font-weight: bold; }
+    .pancha-body .hl-blue   { color: var(--blue);   font-weight: bold; }
+
+    /* Sun/timings table */
+    .timings {
+      margin: 10px 0;
+      font-size: 14.5px;
+      line-height: 2;
+    }
+    .timings .t-row { display: flex; flex-wrap: wrap; }
+    .timings .t-label {
+      color: var(--red);
+      font-weight: bold;
+      min-width: 160px;
+    }
+    .timings .t-value { color: var(--black); }
+
+    /* Footer */
+    .footer-line {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--blue);
+      letter-spacing: 1px;
+    }
+    .footer-deco {
+      text-align: center;
+      color: var(--red);
+      font-size: 13px;
+      letter-spacing: 3px;
+    }
+
+    /* Print / Download buttons */
+    .action-row {
+      max-width: 860px;
+      margin: 14px auto 0;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .action-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .print-btn { background: #0066cc; color: #fff; }
+    .print-btn:hover { background: #0044aa; }
+    .edit-btn  { background: #888; color: #fff; }
+    .edit-btn:hover { background: #666; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .tabs, .action-row, .form-wrapper { display: none !important; }
+      .card-wrapper { border: none; }
+      .panel { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('form')">📝 Enter Details</button>
+  <button class="tab-btn" id="preview-tab-btn" onclick="showTab('preview')">📜 Panchangam Preview</button>
+</div>
+
+<!-- FORM PANEL -->
+<div class="panel active" id="tab-form">
+  <div class="form-wrapper">
+    <h2>பஞ்சாங்கம் விவரங்கள் / Panchangam Details</h2>
+    <div class="form-grid">
+
+      <div class="section-title">📅 Date & Day / தேதி</div>
+
+      <div class="field">
+        <label>Date (தேதி) *</label>
+        <input type="date" id="f_date" value="2026-04-08">
+      </div>
+      <div class="field">
+        <label>Day in Tamil (கிழமை) *</label>
+        <input type="text" id="f_day" placeholder="e.g. புதன் கிழமை">
+      </div>
+      <div class="field">
+        <label>Tamil Month (மாதம்) *</label>
+        <input type="text" id="f_month" placeholder="e.g. பங்குனி">
+      </div>
+      <div class="field">
+        <label>Tamil Date/Thithi No (திதி எண்)</label>
+        <input type="text" id="f_thithi_no" placeholder="e.g. 25">
+      </div>
+
+      <div class="section-title">🌅 Pancha Attributes / பஞ்சாங்க அம்சங்கள்</div>
+
+      <div class="field">
+        <label>Samvatsara (நாம சம்வத்சரே)</label>
+        <input type="text" id="f_samvat" placeholder="e.g. விஸ்வாவசு">
+      </div>
+      <div class="field">
+        <label>Ayanam (ஆயணம்)</label>
+        <input type="text" id="f_ayanam" placeholder="e.g. உத்தராயணே">
+      </div>
+      <div class="field">
+        <label>Ruthu (ருதெள)</label>
+        <input type="text" id="f_ruthu" placeholder="e.g. சிசிர ருதெள">
+      </div>
+      <div class="field">
+        <label>Maasam (மாஸே)</label>
+        <input type="text" id="f_maasam" placeholder="e.g. மீன மாஸே">
+      </div>
+      <div class="field">
+        <label>Paksha (பக்ஷம்)</label>
+        <input type="text" id="f_paksha" placeholder="e.g. க்ருஷ்ண பக்ஷம்">
+      </div>
+      <div class="field">
+        <label>Thithi (திதெள) with End Time</label>
+        <input type="text" id="f_thithi" placeholder="e.g. ஷஷ்ட்யாம் (05:41 Pm)">
+      </div>
+      <div class="field">
+        <label>Next Thithi (அடுத்த திதெள)</label>
+        <input type="text" id="f_thithi2" placeholder="e.g. ஸப்தம்யாம்">
+      </div>
+      <div class="field">
+        <label>Vasara (வாஸர)</label>
+        <input type="text" id="f_vasara" placeholder="e.g. ஸெளம்ய வாஸர யுக்தாயாம்">
+      </div>
+      <div class="field">
+        <label>Nakshatra (நக்ஷத்ர) with End Time</label>
+        <input type="text" id="f_star" placeholder="e.g. மூலா (06:00 Am Till 09th)">
+      </div>
+      <div class="field">
+        <label>Next Nakshatra (அடுத்த நக்ஷத்ரம்)</label>
+        <input type="text" id="f_star2" placeholder="e.g. பூர்வஷாடா">
+      </div>
+      <div class="field">
+        <label>Yoga (யோக) with End Time</label>
+        <input type="text" id="f_yoga" placeholder="e.g. வரியான் (03:53 Pm)">
+      </div>
+      <div class="field">
+        <label>Next Yoga</label>
+        <input type="text" id="f_yoga2" placeholder="e.g. பரிக">
+      </div>
+      <div class="field">
+        <label>Karanam (கரண) with End Time</label>
+        <input type="text" id="f_karanam" placeholder="e.g. வணிஜ (05:41 Pm)">
+      </div>
+      <div class="field">
+        <label>Next Karanam</label>
+        <input type="text" id="f_karanam2" placeholder="e.g. பத்ர">
+      </div>
+
+      <div class="section-title">☀️ Sun & Timings / சூர்யன் & நேரங்கள்</div>
+
+      <div class="field">
+        <label>Place (இடம்)</label>
+        <input type="text" id="f_place" placeholder="e.g. சென்னை">
+      </div>
+      <div class="field">
+        <label>Sunrise - உதயம்</label>
+        <input type="text" id="f_sunrise" placeholder="e.g. 06:03 Am">
+      </div>
+      <div class="field">
+        <label>Sunset - அஸ்தம்</label>
+        <input type="text" id="f_sunset" placeholder="e.g. 06:16 Pm">
+      </div>
+      <div class="field">
+        <label>Yoga (யோகம்)</label>
+        <input type="text" id="f_sun_yoga" placeholder="e.g. மரண யோகம் : 06:00 Am Till 09th">
+      </div>
+      <div class="field">
+        <label>Nalla Neram - Morning (காலை)</label>
+        <input type="text" id="f_nalla_morning" placeholder="e.g. 09:00 / 10:00">
+      </div>
+      <div class="field">
+        <label>Nalla Neram - Evening (மாலை)</label>
+        <input type="text" id="f_nalla_evening" placeholder="e.g. 07:00 / 10:00">
+      </div>
+      <div class="field">
+        <label>Rahu Kalam (ராகு காலம்)</label>
+        <input type="text" id="f_rahu" placeholder="e.g. 12:00 To 01:30 Pm">
+      </div>
+      <div class="field">
+        <label>Yama Gandam (எமகண்டம்)</label>
+        <input type="text" id="f_yama" placeholder="e.g. 07:30 To 09:00 Am">
+      </div>
+      <div class="field">
+        <label>Kuligai (குளிகை)</label>
+        <input type="text" id="f_kuligai" placeholder="e.g. 10:30 TO 12:00 Noon">
+      </div>
+      <div class="field">
+        <label>Srartha Thithi (ஸ்ராத்த திதி)</label>
+        <input type="text" id="f_srartha" placeholder="e.g. க்ருஷண - ஷஷ்டி">
+      </div>
+
+      <div class="section-title">🙏 Vathyar / வாத்யார் விவரம்</div>
+
+      <div class="field full">
+        <label>Vathyar Name & Place (வாத்யார் பெயர் & இடம்)</label>
+        <input type="text" id="f_vathyar" placeholder="e.g. மதுராந்தகம் ஆயனம் கோபாலகிருஷ்ணன் வாத்யார் ஊரப்பாக்கம்">
+      </div>
+      <div class="field">
+        <label>Phone 1</label>
+        <input type="text" id="f_phone1" placeholder="e.g. 9791177286">
+      </div>
+      <div class="field">
+        <label>Phone 2</label>
+        <input type="text" id="f_phone2" placeholder="e.g. 9445627286">
+      </div>
+
+    </div>
+    <button class="generate-btn" onclick="generateCard()">📜 Generate Panchangam</button>
+  </div>
+</div>
+
+<!-- PREVIEW PANEL -->
+<div class="panel" id="tab-preview">
+  <div class="action-row">
+    <button class="action-btn edit-btn" onclick="showTab('form')">✏️ Edit</button>
+    <button class="action-btn print-btn" onclick="window.print()">🖨️ Print</button>
+  </div>
+  <div class="card-wrapper">
+    <div class="pcard" id="pcard-output">
+      <p style="text-align:center;color:#999;padding:40px 0;">Fill in the form and click "Generate Panchangam"</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.tab-btn')[name === 'form' ? 0 : 1].classList.add('active');
+  }
+
+  function v(id) { return document.getElementById(id).value.trim(); }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function generateCard() {
+    const date     = v('f_date');
+    const day      = v('f_day');
+    const month    = v('f_month');
+    const thiNo    = v('f_thithi_no');
+    const samvat   = v('f_samvat');
+    const ayanam   = v('f_ayanam');
+    const ruthu    = v('f_ruthu');
+    const maasam   = v('f_maasam');
+    const paksha   = v('f_paksha');
+    const thithi   = v('f_thithi');
+    const thithi2  = v('f_thithi2');
+    const vasara   = v('f_vasara');
+    const star     = v('f_star');
+    const star2    = v('f_star2');
+    const yoga     = v('f_yoga');
+    const yoga2    = v('f_yoga2');
+    const karanam  = v('f_karanam');
+    const karanam2 = v('f_karanam2');
+    const place    = v('f_place');
+    const sunrise  = v('f_sunrise');
+    const sunset   = v('f_sunset');
+    const sunYoga  = v('f_sun_yoga');
+    const nallAM   = v('f_nalla_morning');
+    const nallPM   = v('f_nalla_evening');
+    const rahu     = v('f_rahu');
+    const yama     = v('f_yama');
+    const kuligai  = v('f_kuligai');
+    const srartha  = v('f_srartha');
+    const vathyar  = v('f_vathyar');
+    const phone1   = v('f_phone1');
+    const phone2   = v('f_phone2');
+
+    const dateDisplay = formatDate(date);
+
+    // Build main paragraph
+    let mainPara = '';
+    if (samvat)   mainPara += `${samvat} நாம சம்வத்சரே - `;
+    if (ayanam)   mainPara += `${ayanam} - `;
+    if (ruthu)    mainPara += `${ruthu} - `;
+    if (maasam)   mainPara += `${maasam} - `;
+    if (paksha)   mainPara += `${paksha} - `;
+
+    // Thithi with highlight
+    if (thithi) {
+      const m = thithi.match(/^(.*?)\s*(\(.*?\))\s*(.*)$/);
+      if (m) {
+        mainPara += `${m[1]} <span class="hl-orange">${m[2]}</span> `;
+        if (thithi2) mainPara += `<span class="hl-orange">(${thithi2})</span> `;
+      } else {
+        mainPara += `${thithi} `;
+      }
+    }
+
+    mainPara += `சுப / புண்ய திதெள - `;
+    if (vasara) mainPara += `வாஸர: ${vasara} - `;
+
+    // Star with highlight
+    if (star) {
+      const m = star.match(/^(.*?)\s*(\(.*?\))\s*(.*)$/);
+      if (m) {
+        mainPara += `${m[1]} <span class="hl-orange">${m[2]}</span> `;
+        if (star2) mainPara += `<span class="hl-blue">(${star2})</span> `;
+      } else {
+        mainPara += `${star} `;
+      }
+    }
+    mainPara += `நக்ஷத்ர யுக்தாயாம் - `;
+
+    // Yoga
+    if (yoga) {
+      const m = yoga.match(/^(.*?)\s*(\(.*?\))\s*(.*)$/);
+      if (m) {
+        mainPara += `வரியான் <span class="hl-orange">${m[2]}</span> `;
+        if (yoga2) mainPara += `<span class="hl-blue">(${yoga2})</span> `;
+      } else {
+        mainPara += `${yoga} `;
+      }
+    }
+    mainPara += `யோக - `;
+
+    // Karanam
+    if (karanam) {
+      const m = karanam.match(/^(.*?)\s*(\(.*?\))\s*(.*)$/);
+      if (m) {
+        mainPara += `${m[1]} <span class="hl-orange">${m[2]}</span> `;
+        if (karanam2) mainPara += `<span class="hl-blue">(${karanam2})</span> `;
+      } else {
+        mainPara += `${karanam} `;
+      }
+    }
+    mainPara += `கரண யுக்தாயாம் ஏவங்குன விசேஷண விசிஷ்டாயாம் அஸ்யாம் ஷஷ்ட்யாம் சுப / புண்ய திதெள ஸ்ரீ பகவதாஜ்ஞுயா....`;
+
+    // Phone display
+    const phoneStr = [phone1, phone2].filter(Boolean).join(' & ');
+
+    const html = `
+      <div class="deity-row">🦚 ☸ 🪷 ☸ 🦚</div>
+
+      <div class="shloka">
+        <div class="sri"><b>ஸ்ரீ:</b></div>
+        ஸ்ரீலக்ஷ்மிந்ருஸிம்ஹ பரப்ரஹ்மணே நமஹ:<br>
+        ஸ்ரீமதே ராமாநுஜாய நம:<br>
+        ஸ்ரீமதே நிஹமாந்த மஹரா தேஶிகாய நமஹ:<br>
+        ஸ்ரீமத்தாதிவன் ஸடகோப யதீந்த்ர மஹரா தேஶிகாய நம:<br>
+        ஸ்ரீவண்ஸடகோப ஸ்ரீ ரங்கநாத யதீந்த்ர மஹாதேஶிகாய நமஹ:
+      </div>
+
+      ${vathyar ? `
+      <div class="vathyar-box">
+        <div class="vathyar-name">${vathyar}.</div>
+        ${phoneStr ? `<div class="vathyar-phone">Ph : ${phoneStr}</div>` : ''}
+      </div>` : ''}
+
+      <div class="date-row">
+        <span>${dateDisplay}</span>
+        ${(month && thiNo) ? `<span>( ${month} : ${thiNo} )</span>` : ''}
+        <span>${day}</span>
+      </div>
+
+      <div class="pancha-body">${mainPara}</div>
+
+      <div class="timings">
+        ${place ? `<div class="t-row"><span class="t-label">சூர்யன் (${place})</span><span class="t-value">: உதயம் : ${sunrise}, அஸ்த : ${sunset},</span></div>` : ''}
+        ${sunYoga ? `<div class="t-row"><span class="t-label">யோகம்</span><span class="t-value">: ${sunYoga},</span></div>` : ''}
+        ${(nallAM || nallPM) ? `<div class="t-row"><span class="t-label">நல்ல நேரம்</span><span class="t-value">: காலை : ${nallAM},&nbsp; மாலை : ${nallPM}.</span></div>` : ''}
+        ${rahu ? `<div class="t-row"><span class="t-label">ராகு காலம்</span><span class="t-value">: மாலை : ${rahu},</span></div>` : ''}
+        ${yama ? `<div class="t-row"><span class="t-label">எமகண்டம்</span><span class="t-value">: காலை : ${yama},</span></div>` : ''}
+        ${kuligai ? `<div class="t-row"><span class="t-label">குளிகை</span><span class="t-value">: மதியம் : ${kuligai},</span></div>` : ''}
+        ${srartha ? `<div class="t-row"><span class="t-label">ஸ்ராத்த திதி</span><span class="t-value">: ${srartha}.</span></div>` : ''}
+      </div>
+
+      <div class="footer-line">* ★☸ ஶுபமஸ்து நித்யம் ☸★ *</div>
+      <div class="footer-deco">·:*·:═·:*:*:·═·:*:·</div>
+    `;
+
+    document.getElementById('pcard-output').innerHTML = html;
+    showTab('preview');
+  }
+</script>
+</body>
+</html>
