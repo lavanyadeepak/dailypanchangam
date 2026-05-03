@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panchangam Video Generator</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #111827;
+            --text-muted: #6b7280;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .field {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Video Generator</h1>
+        <p class="subtitle">Stitch your image and sound track into a video</p>
+        <form id="uploadForm" action="/generate" method="post" enctype="multipart/form-data">
+            <div class="field">
+                <label for="image">Image</label>
+                <input type="file" id="image" name="image" accept="image/*" required>
+            </div>
+            <div class="field">
+                <label for="audio">Audio File</label>
+                <input type="file" id="audio" name="audio" accept="audio/*" required>
+            </div>
+            <button type="submit" id="submitBtn">Generate & Download</button>
+        </form>
+        <div id="loadingMsg" class="loading">
+            Processing... Please wait a moment.
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const btn = document.getElementById('submitBtn');
+        const msg = document.getElementById('loadingMsg');
+
+        form.addEventListener('submit', () => {
+            btn.style.display = 'none';
+            msg.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
