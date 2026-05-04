@@ -72,5 +72,3 @@ npm install
 MIT License — free to use, modify, and share.
 
 ---
-
-Would you like me to also add a **section on watermarking** (with sample FFmpeg overlay command) so the README doubles as a guide for extending the app?
