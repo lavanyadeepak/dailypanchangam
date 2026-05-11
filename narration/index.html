@@ -90,36 +90,109 @@
             color: var(--primary);
             font-weight: 500;
         }
+
+        .tabs {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tab-btn {
+            width: auto;
+            background: none;
+            color: var(--text-muted);
+            padding: 0.5rem 0;
+            margin: 0;
+            border-radius: 0;
+            border-bottom: 2px solid transparent;
+            font-size: 0.875rem;
+        }
+
+        .tab-btn:hover {
+            background: none;
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Video Generator</h1>
-        <p class="subtitle">Stitch your image and sound track into a video</p>
-        <form id="uploadForm" action="/generate" method="post" enctype="multipart/form-data">
-            <div class="field">
-                <label for="image">Image</label>
-                <input type="file" id="image" name="image" accept="image/*" required>
-            </div>
-            <div class="field">
-                <label for="audio">Audio File</label>
-                <input type="file" id="audio" name="audio" accept="audio/*" required>
-            </div>
-            <button type="submit" id="submitBtn">Generate & Download</button>
-        </form>
+        <p class="subtitle">Stitch assets or process existing videos</p>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('stitch', this)">Stitch Audio</button>
+            <button class="tab-btn" onclick="switchTab('overlay', this)">Mute & Text</button>
+        </div>
+
+        <div id="tab-stitch" class="tab-content active">
+            <form action="/generate" method="post" enctype="multipart/form-data">
+                <div class="field">
+                    <label for="image">Image</label>
+                    <input type="file" id="image" name="image" accept="image/*" required>
+                </div>
+                <div class="field">
+                    <label for="audio">Audio File</label>
+                    <input type="file" id="audio" name="audio" accept="audio/*" required>
+                </div>
+                <button type="submit">Generate & Download</button>
+            </form>
+        </div>
+
+        <div id="tab-overlay" class="tab-content">
+            <form action="/overlay" method="post" enctype="multipart/form-data">
+                <div class="field">
+                    <label for="video">Video File</label>
+                    <input type="file" id="video" name="video" accept="video/*" required>
+                </div>
+                <div class="field">
+                    <label for="message">Overlay Message</label>
+                    <input type="text" id="message" name="message" placeholder="Audio muted to avoid copyright infringements">
+                </div>
+                <button type="submit">Process & Download</button>
+            </form>
+        </div>
+
         <div id="loadingMsg" class="loading">
             Processing... Please wait a moment.
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('uploadForm');
-        const btn = document.getElementById('submitBtn');
-        const msg = document.getElementById('loadingMsg');
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
+        }
 
-        form.addEventListener('submit', () => {
-            btn.style.display = 'none';
-            msg.style.display = 'block';
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                this.querySelector('button').style.display = 'none';
+                document.getElementById('loadingMsg').style.display = 'block';
+            });
         });
     </script>
 </body>
