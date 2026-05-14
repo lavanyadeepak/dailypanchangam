@@ -202,6 +202,7 @@
                     <input type="color" id="textColor" value="#ffffff" style="width: 100%; height: 38px; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0;">
                 </div>
             </div>
+            <button onclick="captureArea()">Capture Highlight</button>
             <button type="button" onclick="generateQuoteImage()">Generate & Download Image</button>
         </div>
 
@@ -275,5 +276,44 @@
             link.click();
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+async function captureArea() {
+    const element = document.getElementById("quoteText");
+    const bgColor = document.getElementById('bgColor').value;
+    const textColor = document.getElementById('textColor').value;
+
+    // Create a temporary mirror div because html2canvas often chops text 
+    // in scrollable textareas and doesn't always capture form values correctly.
+    const mirror = document.createElement('div');
+    mirror.innerText = element.value || element.placeholder;
+
+    // Apply styles to match the UI and ensure no chopping (auto-height)
+    Object.assign(mirror.style, {
+        padding: '2rem',
+        background: bgColor,
+        color: textColor,
+        fontSize: '1.25rem',
+        fontWeight: '600',
+        borderRadius: '0.5rem',
+        width: element.offsetWidth + 'px',
+        lineHeight: '1.5',
+        fontFamily: window.getComputedStyle(element).fontFamily,
+        position: 'fixed',
+        left: '-9999px',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word'
+    });
+
+    document.body.appendChild(mirror);
+    const canvas = await html2canvas(mirror, { backgroundColor: null });
+    document.body.removeChild(mirror);
+
+    const link = document.createElement("a");
+    link.download = `highlight-${Date.now()}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+}
+</script>
 </body>
 </html>
