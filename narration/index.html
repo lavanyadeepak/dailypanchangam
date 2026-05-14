@@ -135,6 +135,17 @@
         .tab-content.active {
             display: block;
         }
+
+        textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+            font-family: inherit;
+            resize: vertical;
+        }
     </style>
 </head>
 <body>
@@ -145,6 +156,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('stitch', this)">Stitch Audio</button>
             <button class="tab-btn" onclick="switchTab('overlay', this)">Mute & Text</button>
+            <button class="tab-btn" onclick="switchTab('text-to-image', this)">Text to Image</button>
         </div>
 
         <div id="tab-stitch" class="tab-content active">
@@ -175,6 +187,24 @@
             </form>
         </div>
 
+        <div id="tab-text-to-image" class="tab-content">
+            <div class="field">
+                <label for="quoteText">Quote / Text</label>
+                <textarea id="quoteText" rows="4" placeholder="Enter your quote here..."></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="flex: 1;">
+                    <label for="bgColor">Background</label>
+                    <input type="color" id="bgColor" value="#4f46e5" style="width: 100%; height: 38px; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0;">
+                </div>
+                <div style="flex: 1;">
+                    <label for="textColor">Text Color</label>
+                    <input type="color" id="textColor" value="#ffffff" style="width: 100%; height: 38px; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0;">
+                </div>
+            </div>
+            <button type="button" onclick="generateQuoteImage()">Generate & Download Image</button>
+        </div>
+
         <div id="loadingMsg" class="loading">
             Processing... Please wait a moment.
         </div>
@@ -194,6 +224,56 @@
                 document.getElementById('loadingMsg').style.display = 'block';
             });
         });
+
+        function generateQuoteImage() {
+            const text = document.getElementById('quoteText').value.trim() || "Your quote here...";
+            const bgColor = document.getElementById('bgColor').value;
+            const textColor = document.getElementById('textColor').value;
+
+            // Create an off-screen canvas (Instagram square size)
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1080;
+            canvas.height = 1080;
+
+            // Fill Background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Text Style
+            ctx.fillStyle = textColor;
+            ctx.font = 'bold 64px "Segoe UI", system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Simple word wrapping
+            const words = text.split(/\s+/);
+            const lines = [];
+            let currentLine = '';
+            const maxWidth = 880;
+
+            words.forEach(word => {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            });
+            lines.push(currentLine);
+
+            // Draw centered text
+            const lineHeight = 80;
+            const startY = (canvas.height - (lines.length - 1) * lineHeight) / 2;
+            lines.forEach((line, i) => ctx.fillText(line, 540, startY + (i * lineHeight)));
+
+            // Trigger Download
+            const link = document.createElement('a');
+            link.download = `quote-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
     </script>
 </body>
 </html>
